@@ -12,6 +12,14 @@ import android.view.View;
 
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.TextView;
+
+import org.openmuc.j60870.ClientConnectionBuilder;
+import org.openmuc.j60870.Connection;
+
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -22,6 +30,10 @@ public class MainActivity extends AppCompatActivity {
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+
+        println("Ave satan");
+        testConnection();
+
         FloatingActionButton fab = findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -30,6 +42,35 @@ public class MainActivity extends AppCompatActivity {
                         .setAction("Action", null).show();
             }
         });
+    }
+
+    private static Connection connection;
+    private void testConnection() {
+        InetAddress address;
+        try {
+            address = InetAddress.getByName("192.168.1.19");
+        } catch (UnknownHostException e) {
+            println("Unknown host: ");
+            return;
+        }
+
+        ClientConnectionBuilder clientConnectionBuilder = new ClientConnectionBuilder(address)
+                .setMessageFragmentTimeout(5_000)
+                .setConnectionTimeout(20_000)
+                .setPort(2404);
+
+        try {
+            connection = clientConnectionBuilder.build();
+        } catch (IOException e) {
+            println(e.toString());
+            println("Unable to connect to remote host.");
+            return;
+        }
+    }
+
+    private void println(String msg) {
+        TextView text = findViewById(R.id.debug);
+        text.append((msg+"\n"));
     }
 
     @Override
