@@ -1,5 +1,6 @@
 package com.iec104;
 
+import android.os.AsyncTask;
 import android.os.Bundle;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
@@ -21,71 +22,50 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
-public class MainActivity extends AppCompatActivity
-{
+public class MainActivity extends AppCompatActivity {
+
+    private ConnectionTask Task = null;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState)
-    {
+    protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
-
         println("Ave satan");
-        testConnection();
 
         FloatingActionButton fab = findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
+
+                // check if already existing
+                if (Task == null) {
+                    Task = new ConnectionTask();
+                    Task.execute();
+                }
+
+                Snackbar.make(view, "Connect", Snackbar.LENGTH_LONG)
                         .setAction("Action", null).show();
             }
         });
     }
 
-    private static Connection connection;
-    private void testConnection() {
-        InetAddress address;
-        try {
-            address = InetAddress.getByName("192.168.2.100");
-        } catch (UnknownHostException e) {
-            println("Unknown host: ");
-            return;
-        }
-
-        ClientConnectionBuilder clientConnectionBuilder = new ClientConnectionBuilder(address)
-                .setMessageFragmentTimeout(5_000)
-                .setConnectionTimeout(20_000)
-                .setPort(2404);
-
-        try {
-            connection = clientConnectionBuilder.build();
-        } catch (IOException e) {
-            println(e.toString());
-            println("Unable to connect to remote host.");
-            return;
-        }
-    }
-
     private void println(String msg) {
         TextView text = findViewById(R.id.debug);
-        text.append((msg+"\n"));
+        text.setText((msg + "\n"));
     }
 
     @Override
-    public boolean onCreateOptionsMenu(Menu menu)
-    {
+    public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_main, menu);
         return true;
     }
 
     @Override
-    public boolean onOptionsItemSelected(MenuItem item)
-    {
+    public boolean onOptionsItemSelected(MenuItem item) {
         // Handle action bar item clicks here. The action bar will
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
@@ -97,5 +77,44 @@ public class MainActivity extends AppCompatActivity
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    private class ConnectionTask extends AsyncTask<Void, Void, String> {
+        // Added AsyncTask to handle background activity connection
+        // TODO need to get some data from the server and visualize it on the screen
+        private Connection connection;
+        private String resultAll;
+
+        // This is run in a background thread
+        @Override
+        protected String doInBackground(Void... params) {
+
+            InetAddress address;
+            try {
+                address = InetAddress.getByName("192.168.2.100");
+            } catch (UnknownHostException e) {
+                resultAll = "Unknown host: " + e.toString();
+                return "";
+            }
+
+            ClientConnectionBuilder clientConnectionBuilder = new ClientConnectionBuilder(address)
+                    .setMessageFragmentTimeout(5_000)
+                    .setConnectionTimeout(20_000)
+                    .setPort(2404);
+
+            try {
+                connection = clientConnectionBuilder.build();
+            } catch (IOException e) {
+                resultAll = "Unable to connect to remote host." + e.toString();
+                return "";
+            }
+            resultAll = "Seems ok";
+            return "";
+        }
+
+        @Override
+        protected void onPostExecute(String result) {
+            println(resultAll);
+        }
     }
 }
